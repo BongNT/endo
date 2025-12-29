@@ -1,0 +1,29 @@
+/home/bongmedai/Endo/datasets/endo_coco_seg
+├── analysis
+├── images
+│   ├── train
+│   │   ├──EXPORT_323389_김영조_20180625090423_22.jpg
+│   │   ├──EXPORT_323389_김영조_20180321312423_22.jpg
+│   └── val
+│       ├──EXPORT_323389_김영조_20180321312423_52.jpg
+|
+├── masks
+│   ├── train
+│   │   ├──EXPORT_323389_김영조_20180625090423_22.npy
+│   │   ├──EXPORT_323389_김영조_20180321312423_22.npy
+│   └── val
+│       ├──EXPORT_323389_김영조_20180321312423_52.npy
+
+
+
+path: endo_coco_seg # dataset root dir
+train: images/train # train images (relative to 'path') 4 images
+val: images/val # val images (relative to 'path') 4 images
+test: # test images (optional)
+
+# Classes
+names:
+  0: adenoma
+  1: carcinoma
+
+Mask files shape likes this HWC

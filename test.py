@@ -1,7 +1,10 @@
-from ultralytics import YOLO
+import torch
 
-# Load a model
-model = YOLO("yolo11n-seg.pt")  # load a pretrained model (recommended for training)
+# 1. First, define your model class (must be the same architecture as the saved one)
 
-# Train the model
-results = model.train(data="coco8-seg.yaml", epochs=100, imgsz=640)
+# 2. Load the state_dict
+checkpoint = torch.load('/home/bongmedai/Endo/ultralytics/runs/segment/train5/weights/best.pt', weights_only=False)
+print("Checkpoint keys:", checkpoint.keys())
+print(checkpoint["epoch"])
+print(checkpoint["train_args"])
+# print(checkpoint["train_results"])
