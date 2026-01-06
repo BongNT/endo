@@ -1,7 +1,8 @@
-import os
 import argparse
-import numpy as np
 import csv
+import os
+
+import numpy as np
 
 
 def load_npy_mask(path, threshold=0.5):
@@ -18,11 +19,11 @@ def load_npy_mask(path, threshold=0.5):
 
 
 def dice_score(mask1, mask2, convert_to_fg_bg=True):
-    mask1 = mask1.astype(bool) #HWC: (480, 640, 2)
-    mask2 = mask2.astype(bool) #HWC
+    mask1 = mask1.astype(bool)  # HWC: (480, 640, 2)
+    mask2 = mask2.astype(bool)  # HWC
     if convert_to_fg_bg:
         # convert multi-class to binary (foreground vs background)
-        mask1 = np.any(mask1, axis=-1) 
+        mask1 = np.any(mask1, axis=-1)
         mask2 = np.any(mask2, axis=-1)
     inter = np.logical_and(mask1, mask2).sum()
     union = mask1.sum() + mask2.sum()
@@ -87,8 +88,7 @@ if __name__ == "__main__":
     parser.add_argument("--gt", required=True, help="Ground truth npy folder")
     parser.add_argument("--pred", required=True, help="Prediction npy folder")
     parser.add_argument("--out", default="dice_results", help="Output folder")
-    parser.add_argument("--threshold", type=float, default=0.5,
-                        help="Threshold for binarizing masks")
+    parser.add_argument("--threshold", type=float, default=0.5, help="Threshold for binarizing masks")
     args = parser.parse_args()
 
     main(args.gt, args.pred, args.out, args.threshold)

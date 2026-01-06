@@ -1,13 +1,11 @@
-import os
-import cv2
 import argparse
-import random
-import numpy as np
-import matplotlib.pyplot as plt
-from collections import defaultdict
-
-
 import json
+import os
+import random
+
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
 from PIL import Image
 
 
@@ -23,7 +21,7 @@ def analyze_dataset(root, out_dir="analysis"):
         "no_label_images": {},
         "image_sizes": {},
         "labels_per_image": {},
-        "labels_per_image_detail": {}
+        "labels_per_image_detail": {},
     }
 
     for split in ["train", "val"]:
@@ -49,8 +47,7 @@ def analyze_dataset(root, out_dir="analysis"):
             with Image.open(img_path) as im:
                 w, h = im.size
             size_key = f"{w}x{h}"
-            stats["image_sizes"][split][size_key] = \
-                stats["image_sizes"][split].get(size_key, 0) + 1
+            stats["image_sizes"][split][size_key] = stats["image_sizes"][split].get(size_key, 0) + 1
 
             # -------- labels per image --------
             if not os.path.exists(label_path):
@@ -73,8 +70,7 @@ def analyze_dataset(root, out_dir="analysis"):
 
             # -------- aggregate counts --------
             key = str(n_labels)
-            stats["labels_per_image"][split][key] = \
-                stats["labels_per_image"][split].get(key, 0) + 1
+            stats["labels_per_image"][split][key] = stats["labels_per_image"][split].get(key, 0) + 1
 
             # -------- store detail --------
             stats["labels_per_image_detail"][split].setdefault(key, []).append(img)
@@ -87,7 +83,6 @@ def analyze_dataset(root, out_dir="analysis"):
     print(f"📊 Analysis saved to:\n- {json_path}")
 
     return stats
-
 
 
 def plot_samples(root, split="train", num=5):
@@ -125,20 +120,13 @@ def plot_samples(root, split="train", num=5):
 
                     poly = np.array(poly, np.int32)
                     cv2.polylines(img, [poly], True, (0, 255, 0), 2)
-                    cv2.putText(
-                        img,
-                        f"class {cls}",
-                        tuple(poly[0]),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.6,
-                        (255, 0, 0),
-                        2
-                    )
+                    cv2.putText(img, f"class {cls}", tuple(poly[0]), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
 
         out_path = os.path.join(out_dir, img_name)
         cv2.imwrite(out_path, img)
 
         print(f"✅ Saved: {out_path}")
+
 
 def plot_samples_show_window(root, split="train", num=5):
     img_dir = os.path.join(root, "images", split)
@@ -171,12 +159,7 @@ def plot_samples_show_window(root, split="train", num=5):
 
                 poly = np.array(poly, np.int32)
                 cv2.polylines(img, [poly], True, (0, 255, 0), 2)
-                cv2.putText(
-                    img, f"class {cls}",
-                    tuple(poly[0]),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6, (255, 0, 0), 2
-                )
+                cv2.putText(img, f"class {cls}", tuple(poly[0]), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
 
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         plt.figure(figsize=(6, 6))
