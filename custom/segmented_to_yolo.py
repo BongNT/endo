@@ -40,7 +40,7 @@ OUT_ROOT = DATAPATH + "segmented_yolo_seg"
 
 SPLIT_RATIO = 0.8  # train / val 비율
 MIN_CONTOUR_AREA = 100  # 최소 contour 면적 (노이즈 제거용)
-SIMPLIFY_EPSILON = 2.0  # polygon 단순화 정도 (0=단순화 안함)
+SIMPLIFY_EPSILON = 0.0  # polygon 단순화 정도 (0=단순화 안함)
 
 # [INFO] 테스트 모드 - None이면 전체 처리, 숫자면 해당 개수만 처리
 TEST_LIMIT = None
