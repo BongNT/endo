@@ -19,6 +19,7 @@ def analyze_dataset(root, out_dir="analysis"):
         "images": {},
         "labels": {},
         "instances": {},
+        "instances_per_split": {},   
         "empty_labels": {},
         "no_label_images": {},
         "image_sizes": {},
@@ -26,12 +27,13 @@ def analyze_dataset(root, out_dir="analysis"):
         "labels_per_image_detail": {}
     }
 
+
     for split in ["train", "val"]:
         img_dir = os.path.join(root, "images", split)
         lbl_dir = os.path.join(root, "labels", split)
 
         images = sorted([f for f in os.listdir(img_dir) if f.endswith(".png")])
-
+        stats["instances_per_split"][split] = {}
         stats["images"][split] = len(images)
         stats["labels"][split] = 0
         stats["empty_labels"][split] = 0
@@ -69,7 +71,13 @@ def analyze_dataset(root, out_dir="analysis"):
 
                     for l in lines:
                         cls = int(l.split()[0])
+
+                        # global instances
                         stats["instances"][cls] = stats["instances"].get(cls, 0) + 1
+
+                        # per split instances
+                        split_dict = stats["instances_per_split"][split]
+                        split_dict[cls] = split_dict.get(cls, 0) + 1
 
             # -------- aggregate counts --------
             key = str(n_labels)
