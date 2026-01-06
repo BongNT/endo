@@ -39,8 +39,14 @@ AUGMENTATIONS = {
 # Rotation angles (degrees)
 ROTATION_ANGLES = [90, 180, 270]  # 90도 단위 회전 (좌표 변환이 깔끔함)
 
-# Gaussian blur kernel sizes
-BLUR_KERNEL_SIZES = [5, 7, 9]
+# Gaussian blur 설정 (kernel_size, sigma) - 너무 심하지 않게
+# kernel_size는 홀수여야 함, sigma가 작을수록 약한 블러
+BLUR_CONFIGS = [
+    (3, 0.5),   # 약한 블러
+    (3, 1.0),   # 약한 블러
+    (5, 0.8),   # 중간 블러
+    (5, 1.2),   # 중간 블러
+]
 
 # Train만 augment할지 여부 (일반적으로 validation은 augment 안함)
 AUGMENT_TRAIN_ONLY = True
@@ -125,9 +131,15 @@ def vertical_flip_label(objects: List[Tuple[int, List[Tuple[float, float]]]]) ->
     return flipped
 
 
-def gaussian_blur_image(img: np.ndarray, kernel_size: int = 5) -> np.ndarray:
-    """이미지에 Gaussian blur를 적용한다."""
-    return cv2.GaussianBlur(img, (kernel_size, kernel_size), 0)
+def gaussian_blur_image(img: np.ndarray, kernel_size: int = 3, sigma: float = 1.0) -> np.ndarray:
+    """
+    이미지에 Gaussian blur를 적용한다.
+    
+    Args:
+        kernel_size: 커널 크기 (홀수)
+        sigma: 표준편차 (작을수록 약한 블러)
+    """
+    return cv2.GaussianBlur(img, (kernel_size, kernel_size), sigma)
 
 
 def rotate_image_90(img: np.ndarray, angle: int) -> np.ndarray:
@@ -219,8 +231,8 @@ def process_single_image(
     
     # 3. Gaussian blur (라벨은 원본 그대로)
     if AUGMENTATIONS.get("blur"):
-        kernel_size = random.choice(BLUR_KERNEL_SIZES)
-        aug_img = gaussian_blur_image(img, kernel_size)
+        kernel_size, sigma = random.choice(BLUR_CONFIGS)
+        aug_img = gaussian_blur_image(img, kernel_size, sigma)
         
         out_img_path = os.path.join(out_img_dir, f"{base_name}_blur.jpg")
         out_label_path = os.path.join(out_label_dir, f"{base_name}_blur.txt")
@@ -317,7 +329,7 @@ def main():
     if AUGMENTATIONS.get("vflip"):
         print("  - Vertical flip")
     if AUGMENTATIONS.get("blur"):
-        print(f"  - Gaussian blur (kernel: {BLUR_KERNEL_SIZES})")
+        print(f"  - Gaussian blur (configs: {BLUR_CONFIGS})")
     if AUGMENTATIONS.get("rotate"):
         print(f"  - Rotation ({ROTATION_ANGLES} degrees)")
 
