@@ -15,6 +15,7 @@ YOLO segmentation 데이터셋에 대한 오프라인 augmentation 스크립트.
 import os
 import math
 import random
+import shutil
 from pathlib import Path
 from typing import List, Tuple, Optional
 
@@ -25,15 +26,15 @@ from tqdm import tqdm
 
 # ================= CONFIG =================
 DATAPATH = "C:/Users/user/endo/endo/datasets/"
-SRC_ROOT = DATAPATH + "hyperkvasir_polyps"
-OUT_ROOT = DATAPATH + "hyperkvasir_polyps_augmented"
+SRC_ROOT = DATAPATH + "data_with_augmentation_polyps_negative_10_10pct"
+OUT_ROOT = DATAPATH + "data_with_augmentation_polyps_negative_10_10pct_augmented"
 
 # Augmentation 설정
 AUGMENTATIONS = {
-    "hflip": True,      # Horizontal flip
-    "vflip": True,      # Vertical flip
-    "blur": True,       # Gaussian blur
-    "rotate": True,     # Rotation
+    "hflip": 0.3,       # Horizontal flip (50% 확률)
+    "vflip": 0.3,       # Vertical flip (50% 확률)
+    "blur": 0.3,        # Gaussian blur (30% 확률)
+    "rotate": 0.3,      # Rotation (50% 확률)
 }
 
 # Rotation angles (degrees)
@@ -51,8 +52,14 @@ BLUR_CONFIGS = [
 # Train만 augment할지 여부 (일반적으로 validation은 augment 안함)
 AUGMENT_TRAIN_ONLY = True
 
+# 원본 이미지/라벨도 출력 폴더에 복사할지 여부
+COPY_ORIGINAL = True
+
+# [INFO] 재현성을 위한 랜덤 시드 (None이면 매번 다른 결과)
+RANDOM_SEED: Optional[int] = 42
+
 # [INFO] 테스트 모드 - None이면 전체 처리, 숫자면 해당 개수만 처리
-TEST_LIMIT = 5
+TEST_LIMIT = None
 # ==========================================
 
 
@@ -205,8 +212,13 @@ def process_single_image(
     
     count = 0
     
+    # [INFO] 확률 체크 헬퍼 함수
+    def should_apply(aug_key: str) -> bool:
+        prob = AUGMENTATIONS.get(aug_key, 0.0)
+        return prob > 0 and random.random() < prob
+    
     # 1. Horizontal flip
-    if AUGMENTATIONS.get("hflip"):
+    if should_apply("hflip"):
         aug_img = horizontal_flip_image(img)
         aug_objects = horizontal_flip_label(objects)
         
@@ -218,7 +230,7 @@ def process_single_image(
         count += 1
     
     # 2. Vertical flip
-    if AUGMENTATIONS.get("vflip"):
+    if should_apply("vflip"):
         aug_img = vertical_flip_image(img)
         aug_objects = vertical_flip_label(objects)
         
@@ -230,7 +242,7 @@ def process_single_image(
         count += 1
     
     # 3. Gaussian blur (라벨은 원본 그대로)
-    if AUGMENTATIONS.get("blur"):
+    if should_apply("blur"):
         kernel_size, sigma = random.choice(BLUR_CONFIGS)
         aug_img = gaussian_blur_image(img, kernel_size, sigma)
         
@@ -241,18 +253,20 @@ def process_single_image(
         save_yolo_label(out_label_path, objects)  # 원본 라벨 사용
         count += 1
     
-    # 4. Rotation (90, 180, 270도)
-    if AUGMENTATIONS.get("rotate"):
+    # 4. Rotation (90, 180, 270도) - 각 각도별로 확률 적용
+    if AUGMENTATIONS.get("rotate", 0.0) > 0:
+        rotate_prob = AUGMENTATIONS["rotate"]
         for angle in ROTATION_ANGLES:
-            aug_img = rotate_image_90(img, angle)
-            aug_objects = rotate_label_90(objects, angle)
-            
-            out_img_path = os.path.join(out_img_dir, f"{base_name}_rot{angle}.jpg")
-            out_label_path = os.path.join(out_label_dir, f"{base_name}_rot{angle}.txt")
-            
-            cv2.imwrite(out_img_path, aug_img)
-            save_yolo_label(out_label_path, aug_objects)
-            count += 1
+            if random.random() < rotate_prob:
+                aug_img = rotate_image_90(img, angle)
+                aug_objects = rotate_label_90(objects, angle)
+                
+                out_img_path = os.path.join(out_img_dir, f"{base_name}_rot{angle}.jpg")
+                out_label_path = os.path.join(out_label_dir, f"{base_name}_rot{angle}.txt")
+                
+                cv2.imwrite(out_img_path, aug_img)
+                save_yolo_label(out_label_path, aug_objects)
+                count += 1
     
     return count
 
@@ -260,15 +274,25 @@ def process_single_image(
 def main():
     """메인 augmentation 로직."""
     print("=" * 60)
-    print("[INFO] YOLO Segmentation Dataset Augmentation")
+    print("[INFO] YOLO Segmentation Dataset Augmentation (Probabilistic)")
     print("=" * 60)
     
-    splits_to_process = ["train"] if AUGMENT_TRAIN_ONLY else ["train", "val"]
+    # [INFO] 재현성을 위한 시드 설정
+    if RANDOM_SEED is not None:
+        random.seed(RANDOM_SEED)
+        np.random.seed(RANDOM_SEED)
+        print(f"[INFO] Random seed set to: {RANDOM_SEED}")
+    
+    # [INFO] train은 augmentation + 복사, val은 복사만
+    splits_to_process = ["train", "val"]
     
     total_original = 0
     total_augmented = 0
+    total_copied = 0
     
     for split in splits_to_process:
+        # validation은 augmentation 없이 복사만
+        do_augment = (split == "train") if AUGMENT_TRAIN_ONLY else True
         img_dir = os.path.join(SRC_ROOT, "images", split)
         label_dir = os.path.join(SRC_ROOT, "labels", split)
         out_img_dir = os.path.join(OUT_ROOT, "images", split)
@@ -290,48 +314,62 @@ def main():
         if TEST_LIMIT:
             img_files = img_files[:TEST_LIMIT]
         
-        print(f"\n[INFO] Processing {split}: {len(img_files)} images")
+        mode_str = "augment + copy" if do_augment else "copy only"
+        print(f"\n[INFO] Processing {split}: {len(img_files)} images ({mode_str})")
         total_original += len(img_files)
         
         split_augmented = 0
+        split_copied = 0
         
-        for img_file in tqdm(img_files, desc=f"{split} augmentation"):
+        desc = f"{split} augmentation" if do_augment else f"{split} copy"
+        for img_file in tqdm(img_files, desc=desc):
             base_name = os.path.splitext(img_file)[0]
             img_path = os.path.join(img_dir, img_file)
             label_path = os.path.join(label_dir, f"{base_name}.txt")
             
-            count = process_single_image(
-                img_path=img_path,
-                label_path=label_path,
-                out_img_dir=out_img_dir,
-                out_label_dir=out_label_dir,
-                base_name=base_name
-            )
-            split_augmented += count
+            # [INFO] 원본 이미지/라벨 복사
+            if COPY_ORIGINAL or not do_augment:
+                dst_img_path = os.path.join(out_img_dir, img_file)
+                dst_label_path = os.path.join(out_label_dir, f"{base_name}.txt")
+                shutil.copy2(img_path, dst_img_path)
+                if os.path.exists(label_path):
+                    shutil.copy2(label_path, dst_label_path)
+                split_copied += 1
+            
+            # [INFO] augmentation은 train만 (또는 AUGMENT_TRAIN_ONLY=False면 둘 다)
+            if do_augment:
+                count = process_single_image(
+                    img_path=img_path,
+                    label_path=label_path,
+                    out_img_dir=out_img_dir,
+                    out_label_dir=out_label_dir,
+                    base_name=base_name
+                )
+                split_augmented += count
         
-        print(f"[OK] {split}: {split_augmented} augmented images created")
+        print(f"[OK] {split}: {split_copied} copied, {split_augmented} augmented")
         total_augmented += split_augmented
+        total_copied += split_copied
     
     print("\n" + "=" * 60)
     print(f"[OK] Augmentation complete!")
-    print(f"[INFO] Original images: {total_original}")
-    print(f"[INFO] Augmented images: {total_augmented}")
-    print(f"[INFO] Total images: {total_original + total_augmented}")
+    print(f"[INFO] Source images processed: {total_original}")
+    if COPY_ORIGINAL:
+        print(f"[INFO] Original images copied: {total_copied}")
+    print(f"[INFO] Augmented images created: {total_augmented}")
+    print(f"[INFO] Total output images: {total_copied + total_augmented}")
     print("=" * 60)
     
     # Augmentation 요약
-    aug_count = sum(1 for v in AUGMENTATIONS.values() if v)
-    if AUGMENTATIONS.get("rotate"):
-        aug_count += len(ROTATION_ANGLES) - 1  # rotate는 여러 각도
-    print(f"\n[INFO] Applied augmentations:")
-    if AUGMENTATIONS.get("hflip"):
-        print("  - Horizontal flip")
-    if AUGMENTATIONS.get("vflip"):
-        print("  - Vertical flip")
-    if AUGMENTATIONS.get("blur"):
-        print(f"  - Gaussian blur (configs: {BLUR_CONFIGS})")
-    if AUGMENTATIONS.get("rotate"):
-        print(f"  - Rotation ({ROTATION_ANGLES} degrees)")
+    print(f"\n[INFO] Applied augmentations (probability-based):")
+    if AUGMENTATIONS.get("hflip", 0) > 0:
+        print(f"  - Horizontal flip (prob: {AUGMENTATIONS['hflip']:.0%})")
+    if AUGMENTATIONS.get("vflip", 0) > 0:
+        print(f"  - Vertical flip (prob: {AUGMENTATIONS['vflip']:.0%})")
+    if AUGMENTATIONS.get("blur", 0) > 0:
+        print(f"  - Gaussian blur (prob: {AUGMENTATIONS['blur']:.0%}, configs: {BLUR_CONFIGS})")
+    if AUGMENTATIONS.get("rotate", 0) > 0:
+        print(f"  - Rotation (prob: {AUGMENTATIONS['rotate']:.0%} per angle, angles: {ROTATION_ANGLES})")
 
 
 if __name__ == "__main__":

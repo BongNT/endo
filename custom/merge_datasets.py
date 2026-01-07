@@ -37,15 +37,15 @@ DATASETS = [
         name="hyperkvasir_polyps",
         path="datasets/hyperkvasir_polyps",
         prefix="hk_",
-        train_count=5,   # 800개 중 500개만 사용
-        val_count=1,     # 200개 중 100개만 사용
+        train_count=298,   # 800개 중 500개만 사용
+        val_count=0,     # 200개 중 100개만 사용
         class_mapping=None,
     ),
     DatasetConfig(
         name="hyperkvasir_polyps_augmented",
         path="datasets/hyperkvasir_polyps_augmented",
         prefix="hka_",
-        train_count=10,  # augmented 데이터에서 1000개
+        train_count=0,  # augmented 데이터에서 1000개
         val_count=0,       # val 없음
         class_mapping=None,
     ),
@@ -53,13 +53,13 @@ DATASETS = [
         name="negative_yolo",
         path="datasets/negative_yolo",
         prefix="",         # 이미 neg_ prefix 있음
-        train_count=5,   # 2156개 중 500개만 사용
-        val_count=1,     # 539개 중 100개만 사용
+        train_count=298,   # 2156개 중 500개만 사용
+        val_count=0,     # 539개 중 100개만 사용
         class_mapping=None,
     ),
 ]
 
-TARGET_DIR = Path("datasets/data_with_augmentation")
+TARGET_DIR = Path("datasets/data_with_augmentation_polyps_negative_10_10pct")
 
 # =============================================================================
 
