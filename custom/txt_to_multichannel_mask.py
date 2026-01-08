@@ -1,13 +1,14 @@
 import os
+
 import cv2
 import numpy as np
 from PIL import Image
 
 # ================= CONFIG =================
 DATASET_ROOT = "/home/bongmedai/Endo/datasets/endo_coco_seg3"
-SPLIT = "val"                  # train / val
-OUT_ROOT = "masks"             # output folder
-NUM_CLASSES = 2                   # adenoma, carcinoma
+SPLIT = "val"  # train / val
+OUT_ROOT = "masks"  # output folder
+NUM_CLASSES = 2  # adenoma, carcinoma
 # =========================================
 
 IMG_DIR = os.path.join(DATASET_ROOT, "images", SPLIT)
@@ -17,6 +18,7 @@ OUT_DIR = os.path.join(DATASET_ROOT, OUT_ROOT, SPLIT)
 # LBL_DIR = "/home/bongmedai/Endo/ultralytics/runs/segment/predict/labels"
 # OUT_DIR = "/home/bongmedai/Endo/ultralytics/runs/segment/predict/masks"
 os.makedirs(OUT_DIR, exist_ok=True)
+
 
 def convert_one(img_path, label_path, out_path):
     with Image.open(img_path) as im:
@@ -37,11 +39,7 @@ def convert_one(img_path, label_path, out_path):
             cls = int(parts[0])  # 0=adenoma, 1=carcinoma
             pts = parts[1:]
 
-            poly = np.array(
-                [[int(pts[i] * w), int(pts[i + 1] * h)]
-                 for i in range(0, len(pts), 2)],
-                np.int32
-            )
+            poly = np.array([[int(pts[i] * w), int(pts[i + 1] * h)] for i in range(0, len(pts), 2)], np.int32)
 
             # 🔥 FIX: draw on a contiguous array
             tmp = mask[:, :, cls].copy()

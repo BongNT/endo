@@ -1,7 +1,8 @@
-import os
 import argparse
-import numpy as np
 import csv
+import os
+
+import numpy as np
 
 
 # -----------------------------
@@ -38,12 +39,12 @@ def dice_binary(mask1, mask2):
 # Dice per class + all class
 # -----------------------------
 def dice_per_class_and_all(mask1, mask2):
-    """
-    mask shape: (H, W, C)
-    returns:
+    """Mask shape: (H, W, C).
+
+    Returns:
         per_class_dice: list[C]
         all_class_dice: float (foreground vs background)
-        mean_class_dice: float
+        mean_class_dice: float.
     """
     assert mask1.shape == mask2.shape
     assert mask1.ndim == 3  # HWC
@@ -110,13 +111,11 @@ def main(gt_dir, pred_dir, out_dir, threshold):
         all_mean_dices.append(mean_dice)
         all_fg_dices.append(fg_dice)
 
-        results.append(
-            [fname, mean_dice, fg_dice] + per_class_dice
-        )
+        results.append([fname, mean_dice, fg_dice, *per_class_dice])
 
         print(
             f"{fname} | Mean Dice: {mean_dice:.4f} | FG Dice: {fg_dice:.4f} | "
-            f"Per-class: {[round(d,4) for d in per_class_dice]}"
+            f"Per-class: {[round(d, 4) for d in per_class_dice]}"
         )
 
     # -----------------------------
@@ -125,10 +124,7 @@ def main(gt_dir, pred_dir, out_dir, threshold):
     csv_path = os.path.join(out_dir, "dice_scores.csv")
     num_classes = len(per_class_collect)
 
-    header = (
-        ["filename", "mean_dice", "fg_dice"]
-        + [f"dice_class_{i}" for i in range(num_classes)]
-    )
+    header = ["filename", "mean_dice", "fg_dice"] + [f"dice_class_{i}" for i in range(num_classes)]
 
     with open(csv_path, "w", newline="") as f:
         writer = csv.writer(f)

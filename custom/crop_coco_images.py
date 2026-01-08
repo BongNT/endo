@@ -1,8 +1,9 @@
 import os
+import shutil
+
 import cv2
 import numpy as np
 from tqdm import tqdm
-import shutil
 
 # ================= CONFIG =================
 SRC_ROOT = "/home/bongmedai/Endo/datasets/endo_coco_seg3"
@@ -12,13 +13,9 @@ SPLITS = ["train", "val"]
 IMG_EXTS = (".jpg", ".jpeg", ".png")
 # =========================================
 
-def crop_endo_safe(img,
-                   black_v_thresh=15,
-                   black_ratio_thresh=0.3,
-                   border_check_ratio=0.08):
-    """
-    Robust endoscopy crop that avoids over-cropping
-    when RGB touches image borders.
+
+def crop_endo_safe(img, black_v_thresh=15, black_ratio_thresh=0.3, border_check_ratio=0.08):
+    """Robust endoscopy crop that avoids over-cropping when RGB touches image borders.
     """
     H, W = img.shape[:2]
 
@@ -87,17 +84,16 @@ def crop_endo_safe(img,
 
     return top, bottom, left, right
 
+
 def process_label(label_path, bbox, orig_shape, new_shape):
-    """
-    Update YOLO segmentation labels after cropping
-    """
-    top, bottom, left, right = bbox
+    """Update YOLO segmentation labels after cropping."""
+    top, _bottom, left, _right = bbox
     H, W = orig_shape
     new_H, new_W = new_shape
 
     new_lines = []
 
-    with open(label_path, "r") as f:
+    with open(label_path) as f:
         for line in f:
             parts = line.strip().split()
             cls = parts[0]
@@ -112,12 +108,7 @@ def process_label(label_path, bbox, orig_shape, new_shape):
             coords[:, 1] -= top
 
             # keep only points inside crop
-            valid = (
-                (coords[:, 0] >= 0) &
-                (coords[:, 0] <= new_W) &
-                (coords[:, 1] >= 0) &
-                (coords[:, 1] <= new_H)
-            )
+            valid = (coords[:, 0] >= 0) & (coords[:, 0] <= new_W) & (coords[:, 1] >= 0) & (coords[:, 1] <= new_H)
 
             if np.sum(valid) < 3:
                 continue  # invalid polygon
@@ -155,7 +146,7 @@ for split in SPLITS:
         if img is None:
             continue
 
-        bbox = crop_endo_safe(img, black_ratio_thresh = 0.3, border_check_ratio = 0.08)
+        bbox = crop_endo_safe(img, black_ratio_thresh=0.3, border_check_ratio=0.08)
         if bbox is None:
             continue
 
