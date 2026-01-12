@@ -1,10 +1,12 @@
-import os
-import shutil
 import csv
 import json
+import os
+import shutil
+
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
+
 SRC_ROOT = "/home/bongmedai/Endo/datasets/endo_coco_seg3"
 DST_ROOT = "/home/bongmedai/Endo/datasets/nnUNet_raw/Dataset001_Endo2D"
 
@@ -37,7 +39,7 @@ for split in ["train", "val"]:
             raise FileNotFoundError(msk_path)
 
         # ---- load HWC mask ----
-        mask = np.load(msk_path)   # (H, W, C)
+        mask = np.load(msk_path)  # (H, W, C)
 
         bg = mask.sum(axis=-1) == 0
         label = np.argmax(mask, axis=-1) + 1
@@ -48,23 +50,13 @@ for split in ["train", "val"]:
         case_id = f"case{case_idx:04d}"
 
         # ---- copy image with nnU-Net naming ----
-        shutil.copy(
-            img_path,
-            os.path.join(IMG_TR, f"{case_id}_0000.png")
-        )
+        shutil.copy(img_path, os.path.join(IMG_TR, f"{case_id}_0000.png"))
 
         # ---- save label ----
-        Image.fromarray(label).save(
-            os.path.join(LBL_TR, f"{case_id}.png")
-        )
+        Image.fromarray(label).save(os.path.join(LBL_TR, f"{case_id}.png"))
 
         # ---- mapping ----
-        mapping_rows.append([
-            case_id,
-            split,
-            fname,
-            os.path.basename(msk_path)
-        ])
+        mapping_rows.append([case_id, split, fname, os.path.basename(msk_path)])
 
         if split == "train":
             train_cases.append(case_id)
@@ -76,12 +68,7 @@ for split in ["train", "val"]:
 # ---- save mapping ----
 with open(os.path.join(DST_ROOT, "mapping.csv"), "w", newline="") as f:
     writer = csv.writer(f)
-    writer.writerow([
-        "nnunet_id",
-        "original_split",
-        "original_image",
-        "original_mask"
-    ])
+    writer.writerow(["nnunet_id", "original_split", "original_image", "original_mask"])
     writer.writerows(mapping_rows)
 
 # ---- save split file ----
