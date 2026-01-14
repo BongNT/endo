@@ -5,7 +5,7 @@ import json
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
-SRC_ROOT = "/home/bongmedai/Endo/datasets/endo_coco_seg3"
+SRC_ROOT = "/home/bongmedai/Endo/datasets/endo_coco_seg"
 DST_ROOT = "/home/bongmedai/Endo/datasets/nnUNet_raw/Dataset001_Endo2D"
 
 IMG_TR = os.path.join(DST_ROOT, "imagesTr")
@@ -19,7 +19,7 @@ mapping_rows = []
 train_cases = []
 val_cases = []
 
-for split in ["train", "val"]:
+for split in ["train", "val", "test"]:
     img_dir = os.path.join(SRC_ROOT, "images", split)
     msk_dir = os.path.join(SRC_ROOT, "masks", split)
 

@@ -162,8 +162,8 @@ class Detect(nn.Module):
             self.anchors, self.strides = (x.transpose(0, 1) for x in make_anchors(x, self.stride, 0.5))
             self.shape = shape
 
-        box, cls = x_cat.split((self.reg_max * 4, self.nc), 1)
-        dbox = self.decode_bboxes(self.dfl(box), self.anchors.unsqueeze(0)) * self.strides
+        box, cls = x_cat.split((self.reg_max * 4, self.nc), 1) #split into box(4 conners) + class channel
+        dbox = self.decode_bboxes(self.dfl(box), self.anchors.unsqueeze(0)) * self.strides # because we are working with feature grid to to convert to image space we multiple with strides
         return torch.cat((dbox, cls.sigmoid()), 1)
 
     def bias_init(self):

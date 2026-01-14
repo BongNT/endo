@@ -168,3 +168,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args.gt, args.pred, args.out, args.threshold)
+    # python /home/bongmedai/Endo/ultralytics/custom/cal_dice.py --gt /home/bongmedai/Endo/datasets/endo_coco_crop/masks/val --pred /home/bongmedai/Endo/ultralytics/runs/segment/predict5/masks --out /home/bongmedai/Endo/ultralytics/runs/segment/predict4/dice_results --threshold 0.5
