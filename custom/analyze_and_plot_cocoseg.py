@@ -28,7 +28,7 @@ def analyze_dataset(root, out_dir="analysis"):
     }
 
 
-    for split in ["train", "val"]:
+    for split in ["train", "val", "test"]:
         img_dir = os.path.join(root, "images", split)
         lbl_dir = os.path.join(root, "labels", split)
 
@@ -206,5 +206,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # python ultralytics/custom/analyze_and_plot_cocoseg.py --dataset datasets/endo_coco_crop5 --split train --num 10000
+    # python ultralytics/custom/analyze_and_plot_cocoseg.py --dataset datasets/dataset_final --split train --num 10000
     main()

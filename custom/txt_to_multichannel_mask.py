@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 
 # ================= CONFIG =================
-DATASET_ROOT = "/home/bongmedai/Endo/datasets/endo_coco_seg3"
+DATASET_ROOT = "/home/bongmedai/Endo/datasets/endo_coco_crop"
 SPLIT = "val"                  # train / val
 OUT_ROOT = "masks"             # output folder
 NUM_CLASSES = 2                   # adenoma, carcinoma
@@ -14,8 +14,8 @@ IMG_DIR = os.path.join(DATASET_ROOT, "images", SPLIT)
 LBL_DIR = os.path.join(DATASET_ROOT, "labels", SPLIT)
 OUT_DIR = os.path.join(DATASET_ROOT, OUT_ROOT, SPLIT)
 
-# LBL_DIR = "/home/bongmedai/Endo/ultralytics/runs/segment/predict/labels"
-# OUT_DIR = "/home/bongmedai/Endo/ultralytics/runs/segment/predict/masks"
+# LBL_DIR = "/home/bongmedai/Endo/ultralytics/runs/segment/predict5/labels"
+# OUT_DIR = "/home/bongmedai/Endo/ultralytics/runs/segment/predict5/masks"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 def convert_one(img_path, label_path, out_path):
