@@ -1,8 +1,9 @@
 import os
+import shutil
+
 import cv2
 import numpy as np
 from tqdm import tqdm
-import shutil
 
 # ================= CONFIG =================
 SRC_ROOT = "/home/bongmedai/Endo/datasets/endo_coco_seg"
@@ -12,11 +13,9 @@ SPLITS = ["train", "val", "test"]
 IMG_EXTS = (".jpg", ".jpeg", ".png")
 # =========================================
 
-def crop_endo_safe(img,
-                   black_v_thresh=15,
-                   black_ratio_thresh=0.3,
-                   border_check_ratio=0.08):
-    
+
+def crop_endo_safe(img, black_v_thresh=15, black_ratio_thresh=0.3, border_check_ratio=0.08):
+
     H, W = img.shape[:2]
 
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -24,23 +23,23 @@ def crop_endo_safe(img,
 
     black_mask = v < black_v_thresh
     endo_mask = ~black_mask
-    
+
     # ### NEW: Remove text and small noise using Morphological Opening
-    # This kernel size (5x5) is big enough to eat the thin text 
+    # This kernel size (5x5) is big enough to eat the thin text
     # but small enough to preserve the main image.
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
-    
+
     # We use this 'clean' mask for calculations, but apply coordinates to original img
     clean_mask = cv2.morphologyEx(endo_mask.astype(np.uint8), cv2.MORPH_OPEN, kernel, iterations=4)
     # cv2.imwrite("clean_mask.png", clean_mask*255)
     # Update logic to use clean_mask for projections
     # Note: We invert clean_mask back to get the equivalent 'black_mask' logic if needed,
     # or just use clean_mask directly for sums.
-    
-    # Row / column black ratios (Use original mask for safety or clean_mask? 
+
+    # Row / column black ratios (Use original mask for safety or clean_mask?
     # Better to use clean_mask to ignore text in border checks too)
-    row_black_ratio = 1.0 - np.mean(clean_mask, axis=1) # Inverted logic
-    col_black_ratio = 1.0 - np.mean(clean_mask, axis=0)
+    row_black_ratio = 1.0 - np.mean(clean_mask, axis=1)  # Inverted logic
+    1.0 - np.mean(clean_mask, axis=0)
 
     # Projections (Use clean_mask)
     row_sum = np.sum(clean_mask, axis=1).astype(np.float32)
@@ -64,7 +63,7 @@ def crop_endo_safe(img,
 
     # Border validation
     border_rows = int(border_check_ratio * H)
-    border_cols = int(border_check_ratio * W)
+    int(border_check_ratio * W)
 
     # Top
     if np.mean(row_black_ratio[:border_rows]) < black_ratio_thresh:
@@ -98,17 +97,16 @@ def crop_endo_safe(img,
 
     return top, bottom, left_cand, right_cand
 
+
 def process_label(label_path, bbox, orig_shape, new_shape):
-    """
-    Update YOLO segmentation labels after cropping
-    """
-    top, bottom, left, right = bbox
+    """Update YOLO segmentation labels after cropping."""
+    top, _bottom, left, _right = bbox
     H, W = orig_shape
     new_H, new_W = new_shape
 
     new_lines = []
 
-    with open(label_path, "r") as f:
+    with open(label_path) as f:
         for line in f:
             parts = line.strip().split()
             cls = parts[0]
@@ -123,12 +121,7 @@ def process_label(label_path, bbox, orig_shape, new_shape):
             coords[:, 1] -= top
 
             # keep only points inside crop
-            valid = (
-                (coords[:, 0] >= 0) &
-                (coords[:, 0] <= new_W) &
-                (coords[:, 1] >= 0) &
-                (coords[:, 1] <= new_H)
-            )
+            valid = (coords[:, 0] >= 0) & (coords[:, 0] <= new_W) & (coords[:, 1] >= 0) & (coords[:, 1] <= new_H)
 
             if np.sum(valid) < 3:
                 continue  # invalid polygon
@@ -143,6 +136,7 @@ def process_label(label_path, bbox, orig_shape, new_shape):
             new_lines.append(f"{cls} {flat}")
 
     return new_lines
+
 
 if __name__ == "__main__":
     # ================ MAIN =================
@@ -166,7 +160,7 @@ if __name__ == "__main__":
             if img is None:
                 continue
 
-            bbox = crop_endo_safe(img, black_ratio_thresh = 0.3, border_check_ratio = 0.08)
+            bbox = crop_endo_safe(img, black_ratio_thresh=0.3, border_check_ratio=0.08)
             if bbox is None:
                 continue
 
@@ -189,7 +183,6 @@ if __name__ == "__main__":
             with open(os.path.join(lbl_out_dir, fname.replace(".png", ".txt")), "w") as f:
                 f.write("\n".join(new_labels))
 
-
     # copy dataset.yaml
     try:
         shutil.copy(
@@ -200,4 +193,3 @@ if __name__ == "__main__":
         print(f"Failed to copy dataset.yaml: {e}")
 
     print("✅ Cropping + label remapping completed!")
-

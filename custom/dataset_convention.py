@@ -1,8 +1,9 @@
-import os
+import csv  # ✅ NEW
 import json
-import shutil
+import os
 import random
-import csv               # ✅ NEW
+import shutil
+
 from PIL import Image
 from tqdm import tqdm
 
@@ -10,13 +11,11 @@ from tqdm import tqdm
 DATAPATH = "/home/bongmedai/Endo/datasets/"
 SRC_ROOT = DATAPATH + "Endoscopy_raw"
 OUT_ROOT = DATAPATH + "endo_coco_seg3"
-SPLIT_RATIO = 0.8   # train / val
+SPLIT_RATIO = 0.8  # train / val
 
-CATEGORIES = {
-    "adenoma": 0,
-    "carcinoma": 1
-}
+CATEGORIES = {"adenoma": 0, "carcinoma": 1}
 # ==========================================
+
 
 def normalize_polygon(xs, ys, w, h):
     points = []
@@ -37,7 +36,7 @@ def main():
         with open(label_path) as f:
             data = json.load(f)
 
-        for _, v in data.items():
+        for v in data.values():
             img_path = os.path.join(cls_dir, v["filename"])
             regions = list(v["regions"].values())
             samples.append((cls_name, cls_id, img_path, regions))
@@ -45,10 +44,7 @@ def main():
     random.shuffle(samples)
     split_idx = int(len(samples) * SPLIT_RATIO)
 
-    splits = {
-        "train": samples[:split_idx],
-        "val": samples[split_idx:]
-    }
+    splits = {"train": samples[:split_idx], "val": samples[split_idx:]}
 
     # -------- create folders --------
     for split in ["train", "val"]:
@@ -85,12 +81,7 @@ def main():
                 f.write("\n".join(label_lines))
 
             # -------- NEW: save mapping --------
-            mapping.append([
-                case_name,
-                split,
-                os.path.basename(img_path),
-                cls_name
-            ])
+            mapping.append([case_name, split, os.path.basename(img_path), cls_name])
 
             case_id += 1
 
@@ -98,12 +89,7 @@ def main():
     mapping_path = os.path.join(OUT_ROOT, "mapping.csv")
     with open(mapping_path, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow([
-            "case_id",
-            "split",
-            "original_image",
-            "original_class"
-        ])
+        writer.writerow(["case_id", "split", "original_image", "original_class"])
         writer.writerows(mapping)
 
     print("✅ YOLOv8 segmentation dataset created successfully")
