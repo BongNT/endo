@@ -9,7 +9,7 @@ results = model.train(
     epochs=500,
     imgsz=640,
     # cfg="/home/bongmedai/Endo/ultralytics/custom/hyp_medical.yaml",
-    cache=False, 
-    single_cls=True
+    cache=False,
+    single_cls=True,
 )
 model.info()
