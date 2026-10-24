@@ -7,8 +7,8 @@ import copy
 import math
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
+from torch import nn
 from torch.nn.init import constant_, xavier_uniform_
 
 from ultralytics.utils import NOT_MACOS14
@@ -162,8 +162,10 @@ class Detect(nn.Module):
             self.anchors, self.strides = (x.transpose(0, 1) for x in make_anchors(x, self.stride, 0.5))
             self.shape = shape
 
-        box, cls = x_cat.split((self.reg_max * 4, self.nc), 1) #split into box(4 conners) + class channel
-        dbox = self.decode_bboxes(self.dfl(box), self.anchors.unsqueeze(0)) * self.strides # because we are working with feature grid to to convert to image space we multiple with strides
+        box, cls = x_cat.split((self.reg_max * 4, self.nc), 1)  # split into box(4 conners) + class channel
+        dbox = (
+            self.decode_bboxes(self.dfl(box), self.anchors.unsqueeze(0)) * self.strides
+        )  # because we are working with feature grid to to convert to image space we multiple with strides
         return torch.cat((dbox, cls.sigmoid()), 1)
 
     def bias_init(self):

@@ -1,13 +1,13 @@
 import cv2
 import numpy as np
-import os
+
 
 def overlay_mask(
     img_path,
     mask_path,
     out_path="overlay.png",
     color=(0, 255, 255),  # Red in BGR
-    alpha=0.4
+    alpha=0.4,
 ):
     # Read image (BGR)
     img = cv2.imread(img_path)
